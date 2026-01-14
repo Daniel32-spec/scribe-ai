@@ -1,84 +1,62 @@
 const worker = new Worker('./worker.js', { type: 'module' });
 let wavesurfer = WaveSurfer.create({
     container: '#waveform',
-    waveColor: '#d1d5db',
-    progressColor: '#3b82f6',
-    height: 80,
+    waveColor: '#dcdcdc',
+    progressColor: '#4285f4',
+    height: 60,
     barWidth: 2
 });
 
-// File Upload Handler
-document.getElementById('audio-input').onchange = async (e) => {
+const audioInput = document.getElementById('audio-input');
+const editorBox = document.getElementById('editor-box');
+
+// Step 1: Handle Upload
+document.getElementById('drop-zone').onclick = () => audioInput.click();
+audioInput.onchange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
-    document.getElementById('project-id').value = file.name.replace(/\.[^/.]+$/, "");
+    document.getElementById('file-name').innerText = file.name;
     wavesurfer.load(URL.createObjectURL(file));
+};
 
-    // Prepare audio for AI (Standard 16khz Mono)
+// Step 2: Tap the Google Translate Icon
+document.getElementById('translate-trigger').onclick = async () => {
+    if (!audioInput.files[0]) {
+        alert("Please upload an audio file first!");
+        return;
+    }
+
+    document.getElementById('ai-status').innerText = "Transcribing...";
+    editorBox.innerHTML = "<em>AI is thinking and translating Mende/Krio to English...</em>";
+
+    // Prepare audio data
     const audioCtx = new AudioContext({ sampleRate: 16000 });
-    const buffer = await file.arrayBuffer();
-    const decoded = await audioCtx.decodeAudioData(buffer);
+    const arrayBuffer = await audioInput.files[0].arrayBuffer();
+    const decoded = await audioCtx.decodeAudioData(arrayBuffer);
     
     worker.postMessage({ audio: decoded.getChannelData(0) });
 };
 
-// Handle Messages from AI
 worker.onmessage = (e) => {
-    const { type, message, data } = e.data;
-
-    if (type === 'status') document.getElementById('ai-status').innerText = message;
-    if (type === 'progress') document.getElementById('ai-progress').style.width = data + '%';
+    const { type, data, status, progress } = e.data;
+    if (status) document.getElementById('ai-status').innerText = status;
+    if (progress) document.getElementById('progress-fill').style.width = progress + '%';
     
     if (type === 'complete') {
-        document.getElementById('ai-status').innerText = "Translation Complete";
-        renderTranscript(data.chunks);
+        document.getElementById('ai-status').innerText = "Done";
+        // Convert the text chunks into dialogue
+        editorBox.innerHTML = data.chunks.map((c, i) => `
+            <p><strong>Speaker ${i%2==0?'A':'B'}:</strong> ${c.text}</p>
+        `).join('');
     }
 };
 
-function renderTranscript(chunks) {
-    const container = document.getElementById('transcript-output');
-    const s1 = document.getElementById('s1-label').value;
-    const s2 = document.getElementById('s2-label').value;
-    container.innerHTML = ""; // Clear placeholder
-
-    chunks.forEach((chunk, i) => {
-        const row = document.createElement('div');
-        row.className = "transcript-row";
-        const speaker = (i % 2 === 0) ? s1 : s2;
-        
-        row.innerHTML = `
-            <div class="speaker-tag">${speaker}</div>
-            <div class="text-content" data-start="${chunk.timestamp[0]}">${chunk.text}</div>
-        `;
-        container.appendChild(row);
-    });
-}
-
-// Professional Word (.docx) Export
-document.getElementById('export-word').onclick = () => {
-    const { Document, Packer, Paragraph, TextRun, HeadingLevel } = window.docx;
-    const pid = document.getElementById('project-id').value;
-    const client = document.getElementById('client-name').value;
-    const rows = document.querySelectorAll('.transcript-row');
-
-    const children = [
-        new Paragraph({ text: `TRANSCRIPTION: ${pid}`, heading: HeadingLevel.HEADING_1 }),
-        new Paragraph({ text: `CLIENT: ${client}`, spacing: { after: 400 } }),
-    ];
-
-    rows.forEach(row => {
-        children.push(new Paragraph({
-            children: [
-                new TextRun({ text: row.querySelector('.speaker-tag').innerText + ": ", bold: true }),
-                new TextRun(row.querySelector('.text-content').innerText)
-            ],
-            spacing: { after: 200 }
-        }));
-    });
-
-    const doc = new Document({ sections: [{ children }] });
-    Packer.toBlob(doc).then(blob => saveAs(blob, `${pid}_Transcript.docx`));
-};
-
 document.getElementById('play-pause').onclick = () => wavesurfer.playPause();
+
+// Word Export
+document.getElementById('export-docx').onclick = () => {
+    const { Document, Packer, Paragraph, TextRun } = window.docx;
+    const text = editorBox.innerText;
+    const doc = new Document({ sections: [{ children: [new Paragraph({ children: [new TextRun(text)] })] }] });
+    Packer.toBlob(doc).then(blob => saveAs(blob, "Transcript.docx"));
+};

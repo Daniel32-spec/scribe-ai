@@ -6,21 +6,29 @@ let transcriber = null;
 self.onmessage = async (e) => {
     const { audio } = e.data;
 
-    if (!transcriber) {
-        transcriber = await pipeline('automatic-speech-recognition', 'Xenova/whisper-base', {
-            progress_callback: (p) => {
-                if (p.status === 'progress') self.postMessage({ type: 'progress', progress: p.progress });
-            }
+    try {
+        if (!transcriber) {
+            transcriber = await pipeline('automatic-speech-recognition', 'Xenova/whisper-base', {
+                progress_callback: (p) => {
+                    if (p.status === 'progress') {
+                        self.postMessage({ type: 'progress', progress: p.progress });
+                    }
+                }
+            });
+        }
+
+        self.postMessage({ status: 'Translating Audio to English...' });
+
+        const output = await transcriber(audio, {
+            chunk_length_s: 30,
+            stride_length_s: 5,
+            task: 'translate', // Translates SL dialects to English
+            return_timestamps: true,
         });
+
+        self.postMessage({ type: 'complete', data: output });
+
+    } catch (err) {
+        self.postMessage({ status: 'Error: ' + err.message });
     }
-
-    const output = await transcriber(audio, {
-        chunk_length_s: 30,
-        stride_length_s: 5,
-        return_timestamps: true,
-        language: 'english', // Use 'english' for Sierra Leonean official transcripts
-        task: 'transcribe'
-    });
-
-    self.postMessage({ type: 'complete', data: output });
 };

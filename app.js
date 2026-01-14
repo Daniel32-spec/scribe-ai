@@ -1,91 +1,85 @@
 const worker = new Worker('./worker.js', { type: 'module' });
 let wavesurfer;
 
-// Initialize Wavesurfer
 wavesurfer = WaveSurfer.create({
-    container: '#waveform-display',
-    waveColor: '#4e4e4e',
-    progressColor: '#2563eb',
-    height: 80,
-    responsive: true
+    container: '#waveform',
+    waveColor: '#94a3b8',
+    progressColor: '#6366f1',
+    height: 50,
+    barWidth: 3,
+    barRadius: 3,
+    cursorColor: '#6366f1',
 });
 
-// File Upload & Decode
 document.getElementById('audio-input').onchange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    updateStatus("Reading File...", "orange");
+    document.getElementById('project-name').value = file.name.replace(/\.[^/.]+$/, "");
+    document.getElementById('file-size').innerText = (file.size / (1024*1024)).toFixed(1) + " MB";
     wavesurfer.load(URL.createObjectURL(file));
-
+    
     const audioCtx = new AudioContext({ sampleRate: 16000 });
     const buffer = await file.arrayBuffer();
     const decoded = await audioCtx.decodeAudioData(buffer);
     
+    document.getElementById('engine-status').innerText = "Analyzing...";
     worker.postMessage({ audio: decoded.getChannelData(0) });
 };
 
-// Listen for AI Progress
 worker.onmessage = (e) => {
-    const { type, data, progress } = e.data;
-
+    const { type, data, progress, status } = e.data;
+    
+    if (status) document.getElementById('status-detail').innerText = status;
     if (type === 'progress') {
-        document.getElementById('progress-bar').style.width = progress + '%';
-        updateStatus(`Transcribing... ${Math.round(progress)}%`, "orange");
+        document.getElementById('progress-fill').style.width = progress + '%';
+        document.getElementById('engine-status').innerText = "Transcribing...";
     }
-
+    
     if (type === 'complete') {
-        updateStatus("Complete", "green");
-        generateDialogueHTML(data.chunks);
+        document.getElementById('engine-status').innerText = "Done";
+        renderTranscript(data.chunks);
     }
 };
 
-function generateDialogueHTML(chunks) {
-    const container = document.getElementById('dialogue-container');
-    container.innerHTML = ""; // Clear hints
-
-    chunks.forEach((chunk, index) => {
-        // Logic to alternate speakers or allow manual tagging
-        let speaker = (index % 2 === 0) ? "Interviewer" : "Respondent";
-        
-        const segment = document.createElement('div');
-        segment.className = "transcript-row";
-        segment.innerHTML = `
-            <div class="speaker-tag" contenteditable="false">${speaker}:</div>
-            <div class="text-block" data-start="${chunk.timestamp[0]}">${chunk.text}</div>
+function renderTranscript(chunks) {
+    const editor = document.getElementById('transcript-editor');
+    editor.innerHTML = ""; 
+    
+    chunks.forEach((chunk, i) => {
+        const speaker = (i % 2 === 0) ? "Interviewer" : "Respondent";
+        const div = document.createElement('div');
+        div.className = "transcript-row";
+        div.innerHTML = `
+            <div class="speaker-name">${speaker}</div>
+            <div class="chunk-text" data-start="${chunk.timestamp[0]}">${chunk.text}</div>
         `;
-        container.appendChild(segment);
+        editor.appendChild(div);
+    });
+
+    document.querySelectorAll('.chunk-text').forEach(el => {
+        el.onclick = () => wavesurfer.setTime(parseFloat(el.dataset.start));
     });
 }
 
-// WORD EXPORT (.DOCX) - Professional Format
-document.getElementById('export-docx').onclick = () => {
-    const { Document, Packer, Paragraph, TextRun, HeadingLevel } = window.docx;
+document.getElementById('play-btn').onclick = () => wavesurfer.playPause();
 
-    const fileCode = document.getElementById('meta-code').value;
-    const project = document.getElementById('meta-project').value;
-    const content = document.getElementById('dialogue-container').innerText;
-
-    const doc = new Document({
-        sections: [{
+document.getElementById('export-btn').onclick = () => {
+    const { Document, Packer, Paragraph, TextRun } = window.docx;
+    const blocks = document.querySelectorAll('.transcript-row');
+    
+    const docChildren = Array.from(blocks).map(b => {
+        return new Paragraph({
             children: [
-                new Paragraph({ text: fileCode, heading: HeadingLevel.HEADING_1 }),
-                new Paragraph({ text: `Project: ${project}`, heading: HeadingLevel.HEADING_2 }),
-                new Paragraph({ text: `Date: ${new Date().toLocaleDateString()}` }),
-                new Paragraph({ text: "__________________________________________________", spacing: { after: 300 } }),
-                new Paragraph({
-                    children: [new TextRun(content)],
-                }),
+                new TextRun({ text: b.querySelector('.speaker-name').innerText + ": ", bold: true }),
+                new TextRun(b.querySelector('.chunk-text').innerText),
             ],
-        }],
+            spacing: { after: 200 }
+        });
     });
 
-    Packer.toBlob(doc).then(blob => saveAs(blob, `${fileCode}.docx`));
+    const doc = new Document({ sections: [{ children: docChildren }] });
+    Packer.toBlob(doc).then(blob => {
+        saveAs(blob, document.getElementById('project-name').value + ".docx");
+    });
 };
-
-function updateStatus(msg, color) {
-    document.getElementById('status-msg').innerText = msg;
-    document.getElementById('status-bulb').style.backgroundColor = color;
-}
-
-document.getElementById('btn-play').onclick = () => wavesurfer.playPause();

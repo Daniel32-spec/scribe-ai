@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ScribePro SL | Professional Dashboard</title>
+    <title>ScribePro SL | Professional Suite</title>
     <link rel="stylesheet" href="style.css">
-    <!-- Essential Libraries -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/wavesurfer.js@7"></script>
     <script src="https://unpkg.com/docx@8.5.0/build/index.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
@@ -13,67 +13,68 @@
 <body>
 
     <div class="dashboard">
-        <!-- Sidebar: Project & AI Controls -->
+        <!-- Sidebar -->
         <aside class="sidebar">
             <div class="logo">
-                <div class="logo-box">S</div>
+                <div class="icon">G</div>
                 <h2>ScribePro <span>SL</span></h2>
             </div>
+            
+            <div class="sidebar-content">
+                <div class="input-group">
+                    <label>Project Name</label>
+                    <input type="text" id="project-id" placeholder="KAI_FGD_001">
+                </div>
 
-            <div class="nav-section">
-                <label>PROJECT IDENTIFICATION</label>
-                <input type="text" id="project-id" placeholder="e.g., KAI_FGD_002_HSSEP">
-                <input type="text" id="client-name" placeholder="Client (e.g., GIZ)">
+                <div class="status-card">
+                    <div class="status-info">
+                        <span id="ai-status">Ready</span>
+                        <div class="pulse" id="pulse"></div>
+                    </div>
+                    <div class="progress-bar"><div id="progress-fill"></div></div>
+                    <small>Translation Engine: Whisper-Small</small>
+                </div>
+                
+                <button id="export-docx" class="btn-export">💾 Download Word File</button>
             </div>
-
-            <div class="nav-section">
-                <label>SPEAKER LABELS</label>
-                <div class="speaker-input">
-                    <span>S1</span><input type="text" id="s1-label" value="Interviewer">
-                </div>
-                <div class="speaker-input">
-                    <span>S2</span><input type="text" id="s2-label" value="Respondent">
-                </div>
-            </div>
-
-            <div class="ai-status-card">
-                <div class="status-header">
-                    <span id="ai-status">AI Ready</span>
-                    <div class="indicator" id="ai-indicator"></div>
-                </div>
-                <div class="progress-track">
-                    <div id="ai-progress"></div>
-                </div>
-                <small id="ai-detail">Translating SL Dialects to English</small>
-            </div>
-
-            <button id="export-word" class="btn-primary">Download Word (.docx)</button>
         </aside>
 
-        <!-- Main Content: Audio & Editor -->
-        <main class="content">
-            <header class="content-header">
-                <div class="upload-box">
-                    <input type="file" id="audio-input" accept="audio/*" hidden>
-                    <label for="audio-input" class="upload-label">📁 Click to Upload Project Audio</label>
-                </div>
-                <div id="waveform-container">
-                    <div id="waveform"></div>
-                    <div class="wave-info">
-                        <button id="play-pause">Play / Pause</button>
-                        <span id="time-display">00:00 / 00:00</span>
-                    </div>
+        <!-- Main Workspace -->
+        <main class="workspace">
+            <!-- STEP 1: UPLOAD AREA (Now Highly Visible) -->
+            <header class="upload-zone" id="drop-zone">
+                <input type="file" id="audio-input" accept="audio/*" hidden>
+                <div class="upload-prompt">
+                    <img src="https://cdn-icons-png.flaticon.com/512/3303/3303923.png" width="40">
+                    <h3>CLICK HERE TO UPLOAD AUDIO</h3>
+                    <p id="file-name">No file selected yet</p>
                 </div>
             </header>
 
-            <section class="editor-workspace">
-                <div class="editor-header">
-                    <h3>TRANSCRIPT EDITOR</h3>
-                    <p>AI will translate Mende/Temne/Krio into English text below.</p>
+            <!-- STEP 2: PROFESSIONAL PLAYER -->
+            <section class="player-container">
+                <div id="waveform"></div>
+                <div class="controls">
+                    <button id="play-pause" class="btn-play">Play / Pause</button>
+                    
+                    <!-- GOOGLE TRANSLATE STYLE ICON -->
+                    <button id="translate-trigger" class="btn-google-translate" title="Start AI Transcription">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/d/d7/Google_Translate_logo.svg" width="24">
+                        <span>Tap to Transcribe</span>
+                    </button>
+                    
+                    <span id="time-display">00:00 / 00:00</span>
                 </div>
-                <div id="transcript-output" contenteditable="true">
-                    <!-- Transcription flows here -->
-                    <div class="empty-prompt">Upload an audio file to begin professional transcription...</div>
+            </section>
+
+            <!-- STEP 3: EDITOR BOX -->
+            <section class="editor-area">
+                <div class="editor-header">
+                    <h4>TRANSCRIPT EDITOR</h4>
+                    <small>Mende / Temne / Krio ➔ English</small>
+                </div>
+                <div id="editor-box" contenteditable="true">
+                    <p class="placeholder">Audio text will appear here once you tap the Google icon...</p>
                 </div>
             </section>
         </main>

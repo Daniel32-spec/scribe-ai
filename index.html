@@ -2,68 +2,89 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>ScribePro SL | HSSEP Professional Edition</title>
-    <link rel="stylesheet" href="style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ScribePro SL | Premium AI Transcription</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/wavesurfer.js@7"></script>
     <script src="https://unpkg.com/docx@8.5.0/build/index.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 </head>
 <body>
-    <div class="app-layout">
-        <!-- Sidebar for Metadata & Controls -->
+
+    <!-- Smooth Animated Background -->
+    <div class="bg-gradient"></div>
+
+    <div class="glass-app">
+        <!-- Sidebar -->
         <aside class="sidebar">
-            <div class="logo">
-                <h1>SCRIBE<span>PRO</span></h1>
-                <p>SL Transcription Suite</p>
+            <div class="brand">
+                <div class="logo-icon"></div>
+                <h1>ScribePro <span>SL</span></h1>
             </div>
 
-            <div class="metadata-section">
-                <h3>NGO / PROJECT METADATA</h3>
-                <input type="text" id="meta-code" placeholder="File Code (e.g., KAI_FGD_002)" value="KAI_FGD_002_KOMPASS">
-                <input type="text" id="meta-project" placeholder="Project Name" value="HSSEP Project">
-                <input type="text" id="meta-funder" placeholder="Funder" value="GIZ">
-                <input type="text" id="meta-location" placeholder="Location/Facility">
-            </div>
-
-            <div class="speaker-legend">
-                <h3>SPEAKER IDENTIFICATION</h3>
-                <div class="speaker-input"><span>I:</span><input type="text" id="label-i" value="Interviewer"></div>
-                <div class="speaker-input"><span>R3:</span><input type="text" id="label-r3" value="Respondent 3"></div>
-                <div class="speaker-input"><span>R5:</span><input type="text" id="label-r5" value="Respondent 5"></div>
-                <div class="speaker-input"><span>R8:</span><input type="text" id="label-r8" value="Respondent 8"></div>
-            </div>
-
-            <div class="actions">
-                <input type="file" id="audio-input" accept="audio/*" hidden>
-                <label for="audio-input" class="btn-primary">UPLOAD PROJECT AUDIO</label>
-                <button id="export-docx" class="btn-secondary">EXPORT TO MS WORD (.docx)</button>
-                <div class="ai-status">
-                    <span>AI Engine Status:</span>
-                    <div id="status-bulb"></div>
-                    <span id="status-msg">Idle</span>
-                </div>
-                <div class="progress-bar-container">
-                    <div id="progress-bar"></div>
+            <div class="meta-card">
+                <label>Audio Identity</label>
+                <input type="text" id="project-name" placeholder="Project Code / Name">
+                <div class="file-stats">
+                    <span id="duration">00:00</span> • <span id="file-size">0.0 MB</span>
                 </div>
             </div>
+
+            <div class="speaker-config">
+                <label>Active Speakers</label>
+                <div class="speaker-pill active">
+                    <span class="dot interviewer"></span>
+                    <span>Interviewer</span>
+                </div>
+                <div class="speaker-pill">
+                    <span class="dot respondent"></span>
+                    <span>Respondent</span>
+                </div>
+            </div>
+
+            <div class="status-panel">
+                <div class="status-top">
+                    <span id="engine-status">Engine Ready</span>
+                    <div class="pulse-ring"></div>
+                </div>
+                <div class="progress-bar">
+                    <div id="progress-fill"></div>
+                </div>
+                <p id="status-detail">Optimized for Sierra Leonean Dialects</p>
+            </div>
+
+            <button id="export-btn" class="glass-btn primary">
+                <img src="https://cdn-icons-png.flaticon.com/512/732/732220.png" width="16">
+                Export to Word
+            </button>
         </aside>
 
-        <!-- Main Workspace -->
-        <main class="workspace">
-            <div id="waveform-display"></div>
-            <div class="playback-controls">
-                <button id="btn-play">Play/Pause</button>
-                <span id="timer">00:00 / 00:00</span>
-            </div>
-
-            <div class="transcript-editor">
-                <div class="editor-toolbar">
-                    <span>DIALOGUE EDITOR</span>
-                    <small>Auto-saves to browser</small>
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="workspace-nav">
+                <div class="upload-container">
+                    <input type="file" id="audio-input" accept="audio/*" hidden>
+                    <label for="audio-input" class="upload-trigger">
+                        <span>Click to upload project audio</span>
+                    </label>
                 </div>
-                <!-- This area will be populated by the AI but remains editable -->
-                <div id="dialogue-container" contenteditable="true">
-                    <p class="hint">Upload the FGD audio file to begin AI transcription...</p>
+                
+                <div class="wave-area">
+                    <div id="waveform"></div>
+                    <div class="wave-controls">
+                        <button id="play-btn" class="play-circle">▶</button>
+                        <small>Click words to jump audio</small>
+                    </div>
+                </div>
+            </header>
+
+            <div class="editor-view">
+                <div id="transcript-editor" contenteditable="true">
+                    <div class="empty-state">
+                        <p>Waiting for audio input...</p>
+                        <span>Mende • Temne • Krio • English</span>
+                    </div>
                 </div>
             </div>
         </main>

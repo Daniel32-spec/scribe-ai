@@ -8,27 +8,27 @@ self.onmessage = async (e) => {
 
     try {
         if (!transcriber) {
+            self.postMessage({ type: 'status', message: 'Downloading AI Model (approx. 150MB)...' });
+            // Using whisper-base for better SL language recognition
             transcriber = await pipeline('automatic-speech-recognition', 'Xenova/whisper-base', {
                 progress_callback: (p) => {
-                    if (p.status === 'progress') {
-                        self.postMessage({ type: 'progress', progress: p.progress });
-                    }
+                    if (p.status === 'progress') self.postMessage({ type: 'progress', data: p.progress });
                 }
             });
         }
 
-        self.postMessage({ status: 'Translating Audio to English...' });
+        self.postMessage({ type: 'status', message: 'Translating Audio to English...' });
 
-        const output = await transcriber(audio, {
+        const result = await transcriber(audio, {
             chunk_length_s: 30,
             stride_length_s: 5,
-            task: 'translate', // Translates SL dialects to English
+            task: 'translate', // Translates Krio/Mende/Temne to English
             return_timestamps: true,
         });
 
-        self.postMessage({ type: 'complete', data: output });
+        self.postMessage({ type: 'complete', data: result });
 
     } catch (err) {
-        self.postMessage({ status: 'Error: ' + err.message });
+        self.postMessage({ type: 'error', message: err.message });
     }
 };

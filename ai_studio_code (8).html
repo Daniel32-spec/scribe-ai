@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ScribeAI - Professional Transcription</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Wavesurfer for professional audio visualization -->
+    <script src="https://unpkg.com/wavesurfer.js@7"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Scribe<span>AI</span></h1>
+            <p>Professional In-Browser Transcription (Privacy-First)</p>
+        </header>
+
+        <section class="upload-section" id="drop-zone">
+            <input type="file" id="file-input" accept="audio/*,video/*" hidden>
+            <label for="file-input" class="upload-btn">Upload Audio/Video</label>
+            <p id="file-name">No file selected</p>
+        </section>
+
+        <div id="waveform-container">
+            <div id="waveform"></div>
+            <div id="time-display">00:00 / 00:00</div>
+            <div class="controls">
+                <button id="play-btn">Play / Pause</button>
+            </div>
+        </div>
+
+        <section class="status-section">
+            <div id="status">Ready</div>
+            <div class="progress-bar"><div id="progress-fill"></div></div>
+        </section>
+
+        <main class="editor-layout">
+            <div class="toolbar">
+                <button onclick="exportTxt()">Export TXT</button>
+                <button onclick="copyToClipboard()">Copy All</button>
+            </div>
+            <div id="transcript-editor" contenteditable="true" placeholder="Transcription will appear here..."></div>
+        </main>
+    </div>
+
+    <script type="module">
+        const worker = new Worker('./worker.js', { type: 'module' });
+        let wavesurfer;
+
+        // Initialize Wavesurfer
+        wavesurfer = WaveSurfer.create({
+            container: '#waveform',
+            waveColor: '#4a9eff',
+            progressColor: '#0056b3',
+            cursorColor: '#ffffff',
+            barWidth: 2,
+            height: 80,
+            responsive: true,
+        });
+
+        const fileInput = document.getElementById('file-input');
+        const status = document.getElementById('status');
+        const progressFill = document.getElementById('progress-fill');
+        const editor = document.getElementById('transcript-editor');
+
+        fileInput.onchange = async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            document.getElementById('file-name').innerText = file.name;
+            const url = URL.createObjectURL(file);
+            wavesurfer.load(url);
+            
+            status.innerText = "Loading Model (First time may take a minute)...";
+            processAudio(file);
+        };
+
+        async function processAudio(file) {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+            const arrayBuffer = await file.arrayBuffer();
+            const decodedData = await audioCtx.decodeAudioData(arrayBuffer);
+            
+            // Send to Worker
+            worker.postMessage({
+                audio: decodedData.getChannelData(0)
+            });
+        }
+
+        worker.onmessage = (e) => {
+            const { type, message, data } = e.data;
+            if (type === 'status') status.innerText = message;
+            if (type === 'progress') progressFill.style.width = `${data}%`;
+            if (type === 'result') {
+                status.innerText = "Transcription Complete!";
+                renderTranscript(data.chunks);
+            }
+        };
+
+        function renderTranscript(chunks) {
+            editor.innerHTML = chunks.map(c => 
+                `<span class="segment" data-start="${c.timestamp[0]}">${c.text}</span>`
+            ).join('');
+            
+            document.querySelectorAll('.segment').forEach(s => {
+                s.onclick = () => wavesurfer.setTime(parseFloat(s.dataset.start));
+            });
+        }
+
+        // Global controls
+        document.getElementById('play-btn').onclick = () => wavesurfer.playPause();
+        window.exportTxt = () => {
+            const blob = new Blob([editor.innerText], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'transcript.txt';
+            a.click();
+        };
+    </script>
+</body>
+</html>

@@ -3,90 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ScribePro SL | Premium AI Transcription</title>
-    <link rel="stylesheet" href="styles.css">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <title>ScribePro SL | Professional Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Essential Libraries -->
     <script src="https://unpkg.com/wavesurfer.js@7"></script>
     <script src="https://unpkg.com/docx@8.5.0/build/index.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 </head>
 <body>
 
-    <!-- Smooth Animated Background -->
-    <div class="bg-gradient"></div>
-
-    <div class="glass-app">
-        <!-- Sidebar -->
+    <div class="dashboard">
+        <!-- Sidebar: Project & AI Controls -->
         <aside class="sidebar">
-            <div class="brand">
-                <div class="logo-icon"></div>
-                <h1>ScribePro <span>SL</span></h1>
+            <div class="logo">
+                <div class="logo-box">S</div>
+                <h2>ScribePro <span>SL</span></h2>
             </div>
 
-            <div class="meta-card">
-                <label>Audio Identity</label>
-                <input type="text" id="project-name" placeholder="Project Code / Name">
-                <div class="file-stats">
-                    <span id="duration">00:00</span> • <span id="file-size">0.0 MB</span>
-                </div>
+            <div class="nav-section">
+                <label>PROJECT IDENTIFICATION</label>
+                <input type="text" id="project-id" placeholder="e.g., KAI_FGD_002_HSSEP">
+                <input type="text" id="client-name" placeholder="Client (e.g., GIZ)">
             </div>
 
-            <div class="speaker-config">
-                <label>Active Speakers</label>
-                <div class="speaker-pill active">
-                    <span class="dot interviewer"></span>
-                    <span>Interviewer</span>
+            <div class="nav-section">
+                <label>SPEAKER LABELS</label>
+                <div class="speaker-input">
+                    <span>S1</span><input type="text" id="s1-label" value="Interviewer">
                 </div>
-                <div class="speaker-pill">
-                    <span class="dot respondent"></span>
-                    <span>Respondent</span>
+                <div class="speaker-input">
+                    <span>S2</span><input type="text" id="s2-label" value="Respondent">
                 </div>
             </div>
 
-            <div class="status-panel">
-                <div class="status-top">
-                    <span id="engine-status">Engine Ready</span>
-                    <div class="pulse-ring"></div>
+            <div class="ai-status-card">
+                <div class="status-header">
+                    <span id="ai-status">AI Ready</span>
+                    <div class="indicator" id="ai-indicator"></div>
                 </div>
-                <div class="progress-bar">
-                    <div id="progress-fill"></div>
+                <div class="progress-track">
+                    <div id="ai-progress"></div>
                 </div>
-                <p id="status-detail">Optimized for Sierra Leonean Dialects</p>
+                <small id="ai-detail">Translating SL Dialects to English</small>
             </div>
 
-            <button id="export-btn" class="glass-btn primary">
-                <img src="https://cdn-icons-png.flaticon.com/512/732/732220.png" width="16">
-                Export to Word
-            </button>
+            <button id="export-word" class="btn-primary">Download Word (.docx)</button>
         </aside>
 
-        <!-- Main Content -->
-        <main class="main-content">
-            <header class="workspace-nav">
-                <div class="upload-container">
+        <!-- Main Content: Audio & Editor -->
+        <main class="content">
+            <header class="content-header">
+                <div class="upload-box">
                     <input type="file" id="audio-input" accept="audio/*" hidden>
-                    <label for="audio-input" class="upload-trigger">
-                        <span>Click to upload project audio</span>
-                    </label>
+                    <label for="audio-input" class="upload-label">📁 Click to Upload Project Audio</label>
                 </div>
-                
-                <div class="wave-area">
+                <div id="waveform-container">
                     <div id="waveform"></div>
-                    <div class="wave-controls">
-                        <button id="play-btn" class="play-circle">▶</button>
-                        <small>Click words to jump audio</small>
+                    <div class="wave-info">
+                        <button id="play-pause">Play / Pause</button>
+                        <span id="time-display">00:00 / 00:00</span>
                     </div>
                 </div>
             </header>
 
-            <div class="editor-view">
-                <div id="transcript-editor" contenteditable="true">
-                    <div class="empty-state">
-                        <p>Waiting for audio input...</p>
-                        <span>Mende • Temne • Krio • English</span>
-                    </div>
+            <section class="editor-workspace">
+                <div class="editor-header">
+                    <h3>TRANSCRIPT EDITOR</h3>
+                    <p>AI will translate Mende/Temne/Krio into English text below.</p>
                 </div>
-            </div>
+                <div id="transcript-output" contenteditable="true">
+                    <!-- Transcription flows here -->
+                    <div class="empty-prompt">Upload an audio file to begin professional transcription...</div>
+                </div>
+            </section>
         </main>
     </div>
 
